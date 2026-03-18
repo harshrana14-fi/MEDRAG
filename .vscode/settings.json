@@ -1,0 +1,8 @@
+{
+    "python.analysis.extraPaths": [
+        "./healthquery-backend"
+    ],
+    "python.autoComplete.extraPaths": [
+        "./healthquery-backend"
+    ]
+}
