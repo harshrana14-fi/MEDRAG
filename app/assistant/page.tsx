@@ -1,37 +1,70 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, Suspense } from "react";
 import {
     Send,
-    Paperclip,
     FileText,
     Activity,
     ShieldCheck,
-    Plus,
-    ChevronRight,
-    Info,
     User,
-    Heart,
-    Stethoscope,
-    History as LucideHistory,
+    ArrowLeft,
+    Download,
+    CheckCircle2,
+    Zap,
+    MessageSquare,
+    AlertCircle,
+    Upload
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
-export default function AssistantPage() {
+function AssistantContent() {
+    const searchParams = useSearchParams();
+    const initialPolicy = searchParams.get("policy");
+
     const [query, setQuery] = useState("");
     const [messages, setMessages] = useState<any[]>([]);
     const [isTyping, setIsTyping] = useState(false);
-    const [documents, setDocuments] = useState<any[]>([]);
+    const [selectedPolicy, setSelectedPolicy] = useState<string | null>(initialPolicy);
+    const [isAnalyzed, setIsAnalyzed] = useState(!!initialPolicy);
+
+    const [questionnaire, setQuestionnaire] = useState({
+        policyYears: 0,
+        age: 0,
+        claimType: "Hospitalization",
+        diseaseName: "",
+        location: "",
+        previousClaims: false
+    });
+
     const [isUploading, setIsUploading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        fetchDocuments();
-    }, []);
+        if (initialPolicy) {
+            setSelectedPolicy(initialPolicy);
+            setIsAnalyzed(true);
+            setMessages([
+                {
+                    role: "assistant",
+                    content: `Hi there! I've analyzed the **${initialPolicy.replace('.pdf', '').replace('.txt', '').replace(/_/g, ' ').toUpperCase()}** policy for you.\n\nTo give you precise advice on waiting periods and sub-limits, could you tell me your **age** and **how long you've had this policy**?`,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }
+            ]);
+        } else {
+            setMessages([
+                {
+                    role: "assistant",
+                    content: "Welcome! To start, please **upload a policy PDF** or select one from our Insurance Hub to begin the analysis.",
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }
+            ]);
+        }
+    }, [initialPolicy]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -39,54 +72,21 @@ export default function AssistantPage() {
         }
     }, [messages]);
 
-    const fetchDocuments = async () => {
-        try {
-            const res = await fetch("http://localhost:8000/documents");
-            if (res.ok) {
-                const data = await res.json();
-                setDocuments(data);
-            }
-        } catch (error) {
-            console.error("Failed to fetch documents:", error);
-        }
-    };
+    const suggestedQuestions = [
+        "What is my waiting period for cataract?",
+        "Is robotic surgery covered in this plan?",
+        "What are the network hospitals in my city?",
+        "Calculation for room rent limit?",
+        "Post-hospitalization benefit details"
+    ];
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setIsUploading(true);
-        const formData = new FormData();
-        formData.append("file", file);
-
-        try {
-            const res = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-            });
-
-            if (res.ok) {
-                await fetchDocuments();
-                alert(`Successfully uploaded ${file.name}`);
-            } else {
-                const error = await res.json();
-                alert(`Upload failed: ${error.error}`);
-            }
-        } catch (error) {
-            console.error("Upload error:", error);
-            alert("Upload failed. Make sure backend is running.");
-        } finally {
-            setIsUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = "";
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!query.trim()) return;
+    const handleSubmit = async (e: React.FormEvent | string) => {
+        if (typeof e !== 'string') e.preventDefault();
+        const finalQuery = typeof e === 'string' ? e : query;
+        if (!finalQuery.trim() || !isAnalyzed) return;
 
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const userMessage = { role: "user", content: query, timestamp: time };
+        const userMessage = { role: "user", content: finalQuery, timestamp: time };
         setMessages((prev) => [...prev, userMessage]);
         setQuery("");
         setIsTyping(true);
@@ -95,7 +95,11 @@ export default function AssistantPage() {
             const res = await fetch("/api/query", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query }),
+                body: JSON.stringify({
+                    query: finalQuery,
+                    questionnaire,
+                    selectedPolicy
+                }),
             });
 
             if (res.ok) {
@@ -108,253 +112,232 @@ export default function AssistantPage() {
                 };
                 setMessages((prev) => [...prev, aiMessage]);
             } else {
-                const error = await res.json();
-                throw new Error(error.error);
+                throw new Error("Backend connection issue");
             }
         } catch (error: any) {
-            const errorMessage = {
+            setMessages((prev) => [...prev, {
                 role: "assistant",
-                content: `Error: ${error.message || "Failed to reach medoc intelligence engine. Ensure backend is online."}`,
+                content: "I'm having trouble connecting to the intelligence engine. Please check your internet or retry.",
                 timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            };
-            setMessages((prev) => [...prev, errorMessage]);
+            }]);
         } finally {
             setIsTyping(false);
         }
     };
 
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const onFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.name.endsWith('.pdf')) {
+            alert('Please upload a PDF file.');
+            return;
+        }
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setSelectedPolicy(file.name);
+                setIsAnalyzed(true);
+                setMessages(prev => [...prev, {
+                    role: "assistant",
+                    content: `Successfully uploaded and analyzed **${file.name.toUpperCase()}**. I've indexed the document with MEDRAG intelligence. You can now ask questions about its coverage, waiting periods, and T&Cs.`,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                }]);
+            } else {
+                const data = await res.json();
+                throw new Error(data.error || 'Upload failed');
+            }
+        } catch (err: any) {
+            console.error(err);
+            setMessages(prev => [...prev, {
+                role: "assistant",
+                content: `Sorry, I couldn't process this document. ${err.message}`,
+                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }]);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     return (
-        <main className="min-h-screen bg-slate-50 pt-32 pb-10 px-6">
+        <main className="min-h-screen bg-slate-50 pt-28 pb-10 px-4 md:px-8">
             <Navbar />
 
-            <div className="max-w-7xl mx-auto flex flex-col h-[calc(100vh-12rem)]">
-                {/* Header Branding for Assistant */}
-                <div className="flex items-center justify-between mb-8 bg-white border border-slate-100 p-6 rounded-[2.5rem] shadow-sm">
-                    <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 rounded-2xl bg-teal-500 flex items-center justify-center text-white shadow-lg shadow-teal-100">
-                            <Activity size={28} />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-display font-bold text-slate-900 tracking-tight">MEDOC <span className="text-teal-500 font-medium">Assistant</span></h2>
-                            <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">Neural Health Intelligence Active</p>
-                        </div>
-                    </div>
-                    <div className="hidden md:flex gap-12 items-center">
-                        <div className="flex flex-col items-end">
-                            <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest mb-1">Session Protocol</p>
-                            <p className="font-mono text-sm font-bold text-slate-600 bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">MD-8832-SEC</p>
-                        </div>
-                        <div className="h-10 w-[1px] bg-slate-100" />
-                        <div className="flex flex-col items-end text-sm">
-                            <p className="text-[10px] uppercase text-slate-400 font-bold tracking-widest mb-1">Security</p>
-                            <div className="flex items-center gap-2 text-green-600 font-bold">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                256-BIT AES
+            <div className="max-w-5xl mx-auto flex flex-col gap-6">
+                <header className="flex items-center justify-between bg-white border border-slate-100 px-6 py-4 rounded-2xl shadow-sm">
+                    <div className="flex items-center gap-4">
+                        <Link href="/plans">
+                            <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:text-teal-600 border border-slate-100 cursor-pointer transition-colors">
+                                <ArrowLeft size={16} />
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-1 min-h-0">
-
-                    {/* Left: Enhanced Document Manager */}
-                    <aside className="lg:col-span-4 flex flex-col gap-6">
-                        <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex-1 flex flex-col overflow-hidden">
-                            <div className="flex items-center justify-between mb-8">
-                                <h3 className="font-display font-bold text-slate-900 flex items-center gap-3 text-xl">
-                                    <div className="p-2 bg-teal-50 rounded-xl">
-                                        <FileText size={20} className="text-teal-600" />
-                                    </div>
-                                    Analytic Records
-                                </h3>
-                                <input
-                                    type="file"
-                                    className="hidden"
-                                    accept=".pdf"
-                                    ref={fileInputRef}
-                                    onChange={handleFileUpload}
-                                />
-                                <button
-                                    onClick={() => fileInputRef.current?.click()}
-                                    disabled={isUploading}
-                                    className="w-10 h-10 bg-teal-500 text-white rounded-xl hover:bg-teal-600 transition-all shadow-lg shadow-teal-100 flex items-center justify-center disabled:opacity-50"
-                                >
-                                    <Plus size={22} className={isUploading ? "animate-spin" : ""} />
-                                </button>
+                        </Link>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center text-white shrink-0">
+                                <ShieldCheck size={20} />
                             </div>
-
-                            <div className="space-y-4 overflow-y-auto pr-2 custom-scrollbar flex-1">
-                                {documents.length > 0 ? (
-                                    documents.map((doc, idx) => (
-                                        <DocCard key={idx} name={doc.filename} date={new Date(doc.upload_date).toLocaleDateString()} size="PDF" />
-                                    ))
-                                ) : (
-                                    <div className="text-center py-20 text-slate-400 grayscale opacity-40">
-                                        <LucideHistory size={48} className="mx-auto mb-4" />
-                                        <p className="text-xs font-bold uppercase tracking-widest">No records analyzed</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="mt-8 pt-8 border-t border-slate-50 space-y-4">
-                                <div className="flex items-center justify-between text-xs font-bold text-slate-400 uppercase tracking-widest">
-                                    <span>Storage Used</span>
-                                    <span className="text-teal-600">{Math.min(documents.length * 10, 100)}%</span>
-                                </div>
-                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div className="h-full bg-teal-500 rounded-full transition-all duration-500" style={{ width: `${Math.min(documents.length * 10, 100)}%` }} />
-                                </div>
-                                <div className="p-4 bg-teal-50/50 rounded-2xl flex items-start gap-3 border border-teal-100/50">
-                                    <ShieldCheck size={18} className="text-teal-600 shrink-0 mt-0.5" />
-                                    <p className="text-[10px] text-teal-800 leading-relaxed font-bold uppercase tracking-wide">
-                                        End-to-end encrypted session. Your data is never used for training.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </aside>
-
-                    {/* Right: Premium AI Assistant */}
-                    <section className="lg:col-span-8 flex flex-col h-full">
-                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 flex-1 flex flex-col overflow-hidden">
-
-                            {/* Chat Messages */}
-                            <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar" ref={scrollRef}>
-                                <AnimatePresence>
-                                    {messages.length === 0 && (
-                                        <div className="h-full flex flex-col items-center justify-center text-center space-y-6">
-                                            <div className="relative">
-                                                <div className="absolute inset-0 bg-teal-100 rounded-full blur-2xl opacity-50 scale-150 animate-pulse" />
-                                                <div className="relative w-24 h-24 rounded-[2rem] bg-teal-500 flex items-center justify-center text-white shadow-2xl shadow-teal-200">
-                                                    <Stethoscope size={40} />
-                                                </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <h2 className="text-3xl font-display font-bold text-slate-900">Medical Intelligence</h2>
-                                                <p className="text-slate-500 max-w-sm mx-auto leading-relaxed">
-                                                    Upload your records on the left or type a question to begin a professional health analysis.
-                                                </p>
-                                            </div>
-                                            <div className="flex gap-3 pt-4">
-                                                <BannerBadge label="HIPAA COMPLIANT" />
-                                                <BannerBadge label="AI DIAGNOSTIC SUPPORT" />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {messages.map((m, i) => (
-                                        <motion.div
-                                            key={i}
-                                            initial={{ opacity: 0, y: 15 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            className={cn(
-                                                "flex items-start gap-5",
-                                                m.role === "user" ? "flex-row-reverse" : ""
-                                            )}
-                                        >
-                                            <div className={cn(
-                                                "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-lg transition-transform hover:scale-105",
-                                                m.role === "user" ? "bg-slate-900 text-white" : "bg-teal-500 text-white"
-                                            )}>
-                                                {m.role === "user" ? <User size={22} /> : <Activity size={22} />}
-                                            </div>
-
-                                            <div className="flex flex-col space-y-2 max-w-[80%]">
-                                                <div className={cn(
-                                                    "p-6 rounded-[2rem] shadow-sm relative",
-                                                    m.role === "user"
-                                                        ? "bg-white border border-slate-100 text-slate-800 rounded-tr-none"
-                                                        : "bg-teal-50 text-slate-900 rounded-tl-none border border-teal-100"
-                                                )}>
-                                                    <p className="text-sm md:text-base leading-relaxed font-medium">{m.content}</p>
-                                                    {m.sources && (
-                                                        <div className="mt-5 pt-4 border-t border-teal-100/50 flex flex-wrap gap-2">
-                                                            {m.sources.map((s: string, j: number) => (
-                                                                <span key={j} className="text-[10px] bg-white text-teal-600 px-4 py-1.5 rounded-full border border-teal-200 font-bold flex items-center gap-2 shadow-sm uppercase tracking-widest">
-                                                                    <FileText size={10} /> {s}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <span className={cn(
-                                                    "text-[10px] uppercase tracking-widest font-bold text-slate-400 px-2",
-                                                    m.role === "user" ? "text-right" : "text-left"
-                                                )}>{m.timestamp}</span>
-                                            </div>
-                                        </motion.div>
-                                    ))}
-
-                                    {isTyping && (
-                                        <motion.div className="flex items-center gap-5">
-                                            <div className="w-12 h-12 rounded-2xl bg-teal-500 text-white flex items-center justify-center shrink-0 shadow-lg shadow-teal-100">
-                                                <Activity size={22} />
-                                            </div>
-                                            <div className="bg-teal-50 px-6 py-4 rounded-3xl border border-teal-100 flex gap-1.5">
-                                                {[0, 1, 2].map((i) => (
-                                                    <motion.div
-                                                        key={i}
-                                                        animate={{ opacity: [0.3, 1, 0.3], scale: [1, 1.2, 1] }}
-                                                        transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
-                                                        className="w-2 h-2 bg-teal-500 rounded-full"
-                                                    />
-                                                ))}
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-
-                            {/* Advanced Input Bar */}
-                            <div className="p-8 bg-white border-t border-slate-50">
-                                <form onSubmit={handleSubmit} className="flex gap-4">
-                                    <div className="relative flex-1 group">
-                                        <input
-                                            type="text"
-                                            value={query}
-                                            onChange={(e) => setQuery(e.target.value)}
-                                            placeholder="Ask MEDOC analyzer about your reports..."
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] px-6 py-5 text-sm md:text-base focus:outline-none focus:border-teal-500 focus:bg-white transition-all shadow-inner placeholder:text-slate-400"
-                                        />
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                                            <button type="button" className="p-2 text-slate-400 hover:text-teal-600 transition-colors">
-                                                <Paperclip size={22} />
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <Button type="submit" className="rounded-[1.5rem] px-12 h-auto bg-teal-500 hover:bg-teal-600 text-white shadow-xl shadow-teal-100 transition-all hover:scale-[1.02]">
-                                        <Send size={22} />
-                                    </Button>
-                                </form>
-                                <p className="text-center mt-4 text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-                                    MEDOC can make mistakes. Check important clinical info.
+                            <div className="overflow-hidden">
+                                <h1 className="text-base md:text-lg font-display font-bold text-slate-900 leading-none truncate max-w-xs md:max-w-md">
+                                    {selectedPolicy ? selectedPolicy.replace('.pdf', '').replace('.txt', '').replace(/_/g, ' ').toUpperCase() : "CUSTOM POLICY ANALYSIS"}
+                                </h1>
+                                <p className="text-[9px] text-slate-400 uppercase tracking-widest font-bold mt-1">
+                                    {selectedPolicy ? `Policy ID: MEDRAG-${selectedPolicy.substring(0, 4).toUpperCase()}` : "Ready for Upload"}
                                 </p>
                             </div>
                         </div>
-                    </section>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <button className="hidden md:flex items-center gap-2 bg-slate-50 text-slate-600 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-slate-100 border border-slate-200 transition-all">
+                            <Download size={14} /> Report
+                        </button>
+                        <div className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" />
+                    </div>
+                </header>
+
+                <div className="flex flex-col lg:flex-row gap-6">
+                    <div className="flex-1 min-h-[75vh] flex flex-col relative bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 custom-scrollbar" ref={scrollRef}>
+                            {messages.map((m, i) => (
+                                <div key={i} className={cn("flex items-start gap-3", m.role === "user" ? "flex-row-reverse" : "")}>
+                                    <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
+                                        m.role === "user" ? "bg-slate-900 text-white" : "bg-teal-500 text-white"
+                                    )}>
+                                        {m.role === "user" ? <User size={16} /> : <Activity size={16} />}
+                                    </div>
+
+                                    <div className={cn("flex flex-col space-y-1 max-w-[85%]", m.role === "user" ? "items-end" : "items-start")}>
+                                        <div className={cn("p-5 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.02)] border",
+                                            m.role === "user" ? "bg-white border-slate-100 text-slate-800" : "bg-teal-50/50 border-teal-100 text-slate-900"
+                                        )}>
+                                            <p className="text-sm leading-relaxed font-medium whitespace-pre-wrap">{m.content}</p>
+                                            {m.sources && (
+                                                <div className="mt-4 pt-3 border-t border-teal-200/20 flex flex-wrap gap-2">
+                                                    {m.sources.map((s: string, j: number) => (
+                                                        <span key={j} className="text-[8px] bg-white text-teal-600 px-2 py-0.5 rounded-md border border-teal-100 font-bold uppercase tracking-widest">
+                                                            <FileText size={8} className="inline mr-1" /> {s.replace('.txt', '').replace('.pdf', '')}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="text-[8px] uppercase tracking-widest font-black text-slate-300 px-1">{m.timestamp}</span>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {isTyping && (
+                                <div className="flex items-center gap-3">
+                                    <div className="w-9 h-9 rounded-lg bg-teal-500 text-white flex items-center justify-center shrink-0">
+                                        <Activity size={16} />
+                                    </div>
+                                    <div className="bg-teal-50/50 px-4 py-2 rounded-xl flex gap-1">
+                                        {[0, 1, 2].map((i) => (
+                                            <div key={i} className="w-1.5 h-1.5 bg-teal-500 rounded-full animate-pulse" />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className={cn("p-6 border-t border-slate-50 bg-white", isAnalyzed ? "opacity-100" : "opacity-30 pointer-events-none")}>
+                            <form onSubmit={handleSubmit} className="flex gap-3">
+                                <input
+                                    type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+                                    placeholder="Type your question about coverage..."
+                                    className="flex-1 bg-slate-50 border border-transparent focus:border-teal-500 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all placeholder:text-slate-400 text-slate-900"
+                                />
+                                <Button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-6">
+                                    <Send size={18} />
+                                </Button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <aside className="w-full lg:w-72 space-y-6">
+                        <input type="file" ref={fileInputRef} onChange={onFileSelect} accept=".pdf" className="hidden" />
+
+                        <section className="bg-slate-100 text-slate-900 p-6 rounded-3xl shadow-xl border border-slate-200">
+                            <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-teal-400 mb-4 flex items-center gap-2">
+                                <Upload size={12} /> Custom Document
+                            </h4>
+                            <p className="text-[11px] text-slate-500 mb-6 leading-relaxed">
+                                Want to analyze your own policy PDF? Upload it here for instant medical intelligence.
+                            </p>
+                            <Button onClick={handleUploadClick} disabled={isUploading} className="w-full bg-teal-500 hover:bg-teal-400 text-white font-bold text-[11px] py-3 rounded-xl border-none shadow-lg shadow-teal-500/20 transition-colors">
+                                {isUploading ? "Processing..." : "SELECT FILE"}
+                            </Button>
+                        </section>
+
+                        <section className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                            <h4 className="text-[10px] uppercase tracking-widest font-black text-slate-400 flex items-center gap-2">
+                                <CheckCircle2 size={12} className="text-teal-500" /> Patient Profile
+                            </h4>
+                            <div className="space-y-3">
+                                <ProfileItem label="Current Age" value={`${questionnaire.age} Years`} />
+                                <ProfileItem label="Policy Age" value={`${questionnaire.policyYears} Years`} />
+                                <ProfileItem label="Coverage" value={questionnaire.claimType} />
+                                <ProfileItem label="Location" value={questionnaire.location || "N/A"} />
+                            </div>
+                        </section>
+
+                        <section className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
+                            <h4 className="text-[10px] uppercase tracking-widest font-black text-slate-400 flex items-center gap-2">
+                                <Zap size={12} className="text-amber-500" /> Quick Queries
+                            </h4>
+                            <div className="space-y-2">
+                                {suggestedQuestions.map((q, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={() => handleSubmit(q)}
+                                        className="w-full text-left p-3 rounded-xl border border-slate-50 hover:border-teal-100 hover:bg-teal-50/30 text-[11px] font-medium text-slate-600 transition-all flex items-start gap-2 group"
+                                    >
+                                        <MessageSquare size={12} className="shrink-0 mt-0.5 text-slate-400 group-hover:text-teal-500" />
+                                        {q}
+                                    </button>
+                                ))}
+                            </div>
+                        </section>
+
+                        <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl shadow-slate-200 transition-colors">
+                            <div className="flex items-center gap-2 mb-3">
+                                <AlertCircle size={14} className="text-teal-400" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">AI Insight</span>
+                            </div>
+                            <p className="text-[11px] leading-relaxed text-slate-300 font-medium italic">
+                                "The waiting period for cataracts is usually 24 months. Based on your 1-year duration, you might have another 12 months left."
+                            </p>
+                        </div>
+                    </aside>
                 </div>
             </div>
         </main>
     );
 }
 
-const BannerBadge = ({ label }: { label: string }) => (
-    <div className="px-4 py-1.5 rounded-full border border-teal-200 bg-teal-50 text-[9px] font-bold text-teal-700 tracking-[0.2em] uppercase">
-        {label}
+const ProfileItem = ({ label, value }: { label: string; value: string }) => (
+    <div className="flex items-center justify-between border-b border-slate-50 pb-2">
+        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{label}</span>
+        <span className="text-[11px] font-black text-slate-900">{value}</span>
     </div>
 );
 
-const DocCard = ({ name, date, size }: { name: string; date: string; size: string }) => (
-    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl group cursor-pointer hover:bg-white hover:border-teal-200 border border-transparent transition-all shadow-sm">
-        <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-[var(--color-primary)] transition-colors">
-                <FileText size={20} />
-            </div>
-            <div>
-                <p className="text-sm font-bold text-slate-900 leading-none mb-1">{name}</p>
-                <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">{date} • {size}</p>
-            </div>
-        </div>
-        <ChevronRight size={16} className="text-slate-300 group-hover:text-[var(--color-primary)]" />
-    </div>
-);
+export default function AssistantPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center text-teal-400 font-black tracking-widest">BOOTING_ASSISTANT...</div>}>
+            <AssistantContent />
+        </Suspense>
+    );
+}

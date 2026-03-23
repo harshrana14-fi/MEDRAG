@@ -1,8 +1,8 @@
 {
     "python.analysis.extraPaths": [
-        "./healthquery-backend"
+        "./medrag-backend"
     ],
     "python.autoComplete.extraPaths": [
-        "./healthquery-backend"
+        "./medrag-backend"
     ]
 }

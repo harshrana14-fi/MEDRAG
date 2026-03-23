@@ -33,6 +33,11 @@
 }
 
 :root {
+  --color-background: #FFFFFF;
+  --color-surface: #F8FAFC;
+  --color-text-primary: #1A1A1A;
+  --color-text-muted: #666666;
+  --color-border: #E2E8F0;
   color-scheme: light;
 }
 
@@ -80,4 +85,13 @@ body {
 ::-webkit-scrollbar-thumb {
   background: #137E7A;
   border-radius: 10px;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

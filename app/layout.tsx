@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HealthQuery AI | Understand Your Medical Records",
+  title: "MEDRAG-ARIA | Understand Your Medical Records",
   description: "Simple, medically-accurate answers from your health documentation.",
 };
 
@@ -33,7 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased font-sans bg-[var(--color-background)] text-[var(--color-text-primary)]`}
+        className={`${syne.variable} ${dmSans.variable} ${jetbrainsMono.variable} antialiased font-sans bg-white text-slate-900 transition-colors duration-300`}
       >
         <div className="fixed inset-0 pointer-events-none z-[-1] bg-[radial-gradient(ellipse_at_top,rgba(0,212,255,0.03)_0%,transparent_70%)]" />
         {children}

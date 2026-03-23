@@ -18,9 +18,12 @@ import {
   Cpu,
   Shield,
   Clock,
-  Lock
+  Lock,
+  CheckCircle2,
+  Building2,
+  Scale,
+  Gem
 } from "lucide-react";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
@@ -31,337 +34,232 @@ export default function LandingPage() {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative h-[85vh] min-h-[700px] w-full overflow-hidden hero-curve flex flex-col items-center justify-center text-center text-white pb-32">
-        {/* Background Overlay with Re-adjusted Curve */}
+      <section className="relative h-[90vh] min-h-[800px] w-full overflow-hidden hero-curve flex flex-col items-center justify-center text-center text-white pb-32">
         <div className="absolute inset-0 z-0">
           <img
             src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2000"
-            alt="Medical Research"
-            className="w-full h-full object-cover"
+            alt="Insurance Analysis"
+            className="w-full h-full object-cover scale-110 blur-[2px]"
           />
-          <div className="absolute inset-0 bg-teal-900/70" />
+          <div className="absolute inset-0 bg-black/50" />
         </div>
 
-        <div className="relative z-10 px-6 space-y-6 max-w-3xl mb-12">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-display font-bold leading-tight"
-          >
-            MEDOC<br /> Health Intelligence
-          </motion.h1>
+        <div className="relative z-30 px-6 space-y-10 max-w-4xl mb-12 pt-32">
+          <h1 className="text-5xl md:text-8xl font-display font-bold leading-[0.9] tracking-tighter">
+            MEDRAG<br />
+            <span className="text-teal-400">ARIA</span>
+          </h1>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-sm md:text-base text-white/80 max-w-xl mx-auto"
-          >
-            MEDOC translates complex medical documentation, lab results, and clinical notes into simple, medically-grounded explanations.
-          </motion.p>
+          <p className="text-base md:text-xl text-white/80 max-w-2xl mx-auto leading-relaxed font-medium">
+            Decode complex health insurance policies, government schemes, and claim T&Cs in seconds using medically-grounded AI intelligence.
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Link href="/assistant">
-              <Button className="bg-white/20 hover:bg-white/30 text-white rounded-full px-12 py-5 border border-white/40 h-auto font-bold uppercase tracking-widest backdrop-blur-md">
-                Start Neural Scan
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6">
+            <Link href="/plans">
+              <Button className="bg-teal-500 hover:bg-teal-400 text-white rounded-2xl px-12 py-7 border-none h-auto font-black uppercase tracking-[0.2em] text-sm shadow-2xl shadow-teal-500/20 transition-all active:scale-95">
+                Explore All Plans
               </Button>
             </Link>
-          </motion.div>
+            <Link href="/assistant">
+              <Button className="bg-white/10 hover:bg-white/20 text-white rounded-2xl px-12 py-7 border border-white/20 h-auto font-black uppercase tracking-[0.2em] text-sm backdrop-blur-md transition-all">
+                Launch Assistant
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* Overlapping Interface Area */}
       <div className="relative -mt-60 z-20 flex flex-col items-center px-6">
-        {/* Doctors popping out from behind the card */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.8 }}
-          className="relative z-10 flex justify-center w-full"
-        >
-          <img
-            src="/doctors.png"
-            alt="Medical Team"
-            className="w-full h-auto max-w-5xl max-h-[500px] object-contain select-none pointer-events-none -mb-16"
-          />
-        </motion.div>
+        <div className="relative z-10 flex justify-center w-full">
+          <div className="relative">
+            <img
+              src="/doctors.png"
+              alt="Medical Team"
+              className="w-full h-auto max-w-5xl max-h-[550px] object-contain select-none pointer-events-none -mb-20"
+            />
+          </div>
+        </div>
 
-        {/* Query Bar - Sitting on top of the doctors' bottom edge */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-          className="relative z-20 w-full max-w-6xl bg-white rounded-full shadow-[0_30px_100px_-20px_rgba(0,0,0,0.15)] p-4 md:p-6 mb-20 flex flex-col md:flex-row items-center gap-6 border border-teal-50"
-        >
-          <AppointmentField label="Type of Document" value="Lab Results" />
-          <div className="h-10 w-[1px] bg-slate-100 hidden md:block" />
-          <AppointmentField label="Analysis Focus" value="General Summary" />
-          <div className="h-10 w-[1px] bg-slate-100 hidden md:block" />
-          <AppointmentField label="Security Protocol" value="256-Bit Encrypted" />
+        <div className="relative z-20 w-full max-w-6xl bg-white/95 backdrop-blur-2xl rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] p-6 md:p-8 mb-24 flex flex-col md:flex-row items-center gap-8 border border-slate-100">
+          <AppointmentField label="Coverage Type" value="Family Health" />
+          <div className="h-12 w-[1px] bg-slate-100 hidden md:block" />
+          <AppointmentField label="Provider Focus" value="Top Private Companies" />
+          <div className="h-12 w-[1px] bg-slate-100 hidden md:block" />
+          <AppointmentField label="AI Mode" value="Context-Aware (Live)" />
 
-          <Link href="/assistant" className="w-full md:w-auto">
-            <button className="w-full border-2 border-[var(--color-primary)] text-[var(--color-primary)] px-8 py-3 rounded-full font-bold text-sm hover:bg-teal-50 transition-all uppercase tracking-widest">
-              Analyze Now
+          <Link href="/plans" className="w-full md:w-auto">
+            <button className="w-full bg-slate-900 text-white px-10 py-5 rounded-[1.5rem] font-black text-[10px] hover:bg-teal-600 transition-all uppercase tracking-[0.3em] shadow-xl shadow-slate-200">
+              Start Analysis
             </button>
           </Link>
-        </motion.div>
+        </div>
       </div>
 
-      {/* We are offering section */}
-      <section className="py-24 px-6 bg-white overflow-hidden">
+      <section className="py-32 px-6 bg-white">
         <div className="max-w-7xl mx-auto">
-          <p className="text-slate-500 font-medium text-sm mb-2">Department of medical HQ health care</p>
-          <div className="flex justify-between items-center mb-12">
-            <h2 className="text-5xl font-display font-bold text-slate-800 tracking-tight">We are offering best for you!</h2>
+          <div className="flex flex-col md:flex-row justify-between items-end gap-10 mb-20">
+            <div className="space-y-4">
+              <p className="text-teal-600 font-black tracking-[0.4em] uppercase text-[10px]">What we provide</p>
+              <h2 className="text-5xl md:text-7xl font-display font-bold text-slate-950 tracking-tighter leading-none">Complete Policy <br />Intelligence.</h2>
+            </div>
             <div className="flex gap-4">
-              <button className="w-16 h-16 rounded-full bg-teal-50 flex items-center justify-center text-teal-600 hover:bg-teal-100 transition-all">
-                <ChevronDown className="rotate-90" size={24} />
-              </button>
-              <button className="w-16 h-16 rounded-full bg-teal-100 flex items-center justify-center text-teal-600 hover:bg-teal-200 transition-all">
-                <ChevronDown className="-rotate-90" size={24} />
-              </button>
+              <NavCircle direction="left" />
+              <NavCircle direction="right" active />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative pb-20">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative pb-20">
             <OfferingCard
-              image="https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&q=80&w=800"
-              title="Lab Analysis"
-              description="We are give you best quality health care services & facilities of latest technology so patient records easy & secure"
+              image="https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=800"
+              title="Claim Eligibility"
+              description="Instantly verify if your specific treatment is covered under your policy duration and age group."
             />
             <OfferingCard
-              image="https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&q=80&w=800"
-              title="Neural Scanning"
+              image="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=800"
+              title="T&C Decoder"
+              description="Translate dense legal terminology into simple, actionable bullet points that anyone can understand."
             />
             <OfferingCard
-              image="https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=800"
-              title="Patient Care"
+              image="https://images.unsplash.com/photo-1626262334863-44026362d294?auto=format&fit=crop&q=80&w=800"
+              title="Waiting Periods"
+              description="Get precise timelines for pre-existing disease coverage so you can plan your procedures effectively."
             />
 
-            {/* Carousel Indicator Line */}
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-2 w-32">
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex gap-4 w-40">
               <div className="h-1 bg-teal-500 flex-1 rounded-full" />
-              <div className="h-1 bg-teal-100 flex-1 rounded-full" />
-              <div className="h-1 bg-teal-100 flex-1 rounded-full" />
+              <div className="h-1 bg-slate-100 flex-1 rounded-full" />
+              <div className="h-1 bg-slate-100 flex-1 rounded-full" />
             </div>
           </div>
-
-
         </div>
       </section>
 
-      {/* Why HealthQuery AI Section */}
-      <section className="py-32 px-6 bg-slate-50 overflow-hidden">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="space-y-8"
-          >
-            <div className="space-y-4">
-              <p className="text-teal-500 font-bold tracking-widest uppercase text-sm">Empowering Patients</p>
-              <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-800 leading-tight">Why Choose <br /> HealthQuery AI?</h2>
-              <p className="text-slate-500 text-lg leading-relaxed max-w-lg">
-                We bridge the gap between complex clinical terminology and patient understanding. Our platform uses state-of-the-art neural networks trained on medical taxonomies to ensure you're never left in the dark about your health.
+      <section className="py-40 px-6 bg-slate-50">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+          <div className="space-y-10">
+            <div className="space-y-6">
+              <p className="text-teal-600 font-black tracking-[0.4em] uppercase text-[10px]">Standard of excellence</p>
+              <h2 className="text-5xl md:text-7xl font-display font-bold text-slate-950 leading-[0.9] tracking-tighter">Why Choose <br /> MEDRAG?</h2>
+              <p className="text-slate-500 text-lg leading-relaxed max-w-lg font-medium">
+                Insurance providers use complex language. We use intelligence. We bridge the gap between 40-page policy brochures and the answers you need for your family's health.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-teal-600">99.8%</div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Accuracy Rate</p>
+            <div className="grid grid-cols-2 gap-12">
+              <div className="space-y-3">
+                <div className="text-5xl font-display font-bold text-teal-600">99.9%</div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Query Precision</p>
               </div>
-              <div className="space-y-2">
-                <div className="text-3xl font-bold text-teal-600">1.2M+</div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Papers Scanned</p>
+              <div className="space-y-3">
+                <div className="text-5xl font-display font-bold text-teal-600">10ms</div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Analysis Speed</p>
               </div>
             </div>
 
-            <Button className="bg-teal-500 hover:bg-teal-600 text-white rounded-full px-10 py-6 h-auto font-bold uppercase tracking-widest shadow-xl shadow-teal-100">
-              Learn More About Us
+            <Button className="bg-slate-950 text-white rounded-2xl px-12 py-7 h-auto font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 transition-all">
+              Discover Our Method
             </Button>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-            className="relative"
-          >
-            <div className="absolute -inset-10 bg-teal-200/20 rounded-full blur-3xl animate-pulse" />
+          <div className="relative">
+            <div className="absolute -inset-20 bg-teal-500/10 rounded-full blur-[120px]" />
             <img
-              src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1000"
-              alt="AI Analysis"
-              className="relative z-10 w-full h-auto rounded-[3rem] shadow-2xl"
+              src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=1200"
+              alt="Policy Hub"
+              className="relative z-10 w-full h-[600px] object-cover rounded-[4rem] shadow-2xl"
             />
-            <div className="absolute -bottom-10 -left-10 bg-white p-8 rounded-[2rem] shadow-2xl z-20 flex items-center gap-6 border border-slate-100">
-              <div className="w-16 h-16 bg-teal-500 rounded-full flex items-center justify-center text-white">
-                <ShieldCheck size={32} />
+            <div className="absolute -bottom-10 -left-10 bg-white p-10 rounded-[3rem] shadow-xl z-20 flex items-center gap-8 border border-slate-50">
+              <div className="w-20 h-20 bg-teal-500 rounded-3xl flex items-center justify-center text-white">
+                <ShieldCheck size={40} />
               </div>
               <div>
-                <p className="font-bold text-slate-800">HIPAA Compliant</p>
-                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Secure Data Handling</p>
+                <p className="text-xl font-display font-bold text-slate-950">Bank-Grade</p>
+                <p className="text-[10px] text-teal-600 font-black uppercase tracking-[0.2em]">Privacy Protocol</p>
               </div>
             </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* How to Use It Section */}
-      <section className="py-32 px-6 bg-white">
-        <div className="max-w-7xl mx-auto text-center space-y-20">
-          <div className="space-y-4">
-            <p className="text-teal-500 font-bold tracking-widest uppercase text-sm">Simple Process</p>
-            <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-800">How It Works</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
-            {/* Connection Line */}
-            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-100 -translate-y-1/2 hidden md:block z-0" />
-
-            {[
-              { icon: <Upload size={32} />, title: "Upload Records", desc: "Securely upload your PDFs, scans, or lab reports to our encrypted cloud." },
-              { icon: <Cpu size={32} />, title: "Neural Scan", desc: "Our AI analyzes the document against billions of medical data points." },
-              { icon: <FileText size={32} />, title: "Get Insights", desc: "Receive a clear, actionable summary that explains everything in plain English." }
-            ].map((step, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.2 }}
-                className="relative z-10 flex flex-col items-center gap-6 group"
-              >
-                <div className="w-24 h-24 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-teal-600 transition-all group-hover:bg-teal-500 group-hover:text-white group-hover:shadow-xl group-hover:shadow-teal-100 group-hover:-translate-y-2 shadow-sm">
-                  {step.icon}
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-slate-800">0{i + 1}. {step.title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed max-w-[250px] mx-auto">{step.desc}</p>
-                </div>
-              </motion.div>
-            ))}
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-32 px-6 bg-teal-900 text-white overflow-hidden relative">
-        <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <img src="https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=2000" className="w-full h-full object-cover" />
-        </div>
-
-        <div className="max-w-7xl mx-auto space-y-20 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-end gap-8">
-            <div className="space-y-4 text-left">
-              <p className="text-teal-400 font-bold tracking-widest uppercase text-sm">Core Capabilities</p>
-              <h2 className="text-4xl md:text-6xl font-display font-bold">Cutting-edge Features <br /> for Modern Health</h2>
-            </div>
-            <Button className="bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-full px-10 py-6 h-auto font-bold uppercase tracking-widest backdrop-blur-md">
-              View All Capabilities
-            </Button>
+      <section className="py-40 px-6 bg-white relative">
+        <div className="max-w-7xl mx-auto text-center space-y-24">
+          <div className="space-y-6">
+            <p className="text-teal-600 font-black tracking-[0.4em] uppercase text-[10px]">Streamlined Experience</p>
+            <h2 className="text-5xl md:text-8xl font-display font-bold text-slate-950 tracking-tighter leading-none">How It Works.</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { title: "Lab Marker Clarity", icon: <Activity />, desc: "Understand every marker in your bloodwork with precision context." },
-              { title: "Insurance Sync", icon: <ShieldCheck />, desc: "Compare billing codes and insurance clauses in seconds." },
-              { title: "Side Effect Scan", icon: <Zap />, desc: "Instantly identify potential side effects across all prescriptions." },
-              { title: "Encrypted Vault", icon: <Lock />, desc: "Your data is protected by military-grade 256-bit encryption." }
-            ].map((feat, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-white/5 border border-white/10 p-10 rounded-[2.5rem] backdrop-blur-md hover:bg-white/10 transition-all group"
-              >
-                <div className="w-14 h-14 rounded-2xl bg-teal-400/20 flex items-center justify-center text-teal-400 mb-8 border border-teal-400/20 group-hover:scale-110 transition-transform">
-                  {React.cloneElement(feat.icon as React.ReactElement<any>, { size: 28 })}
-                </div>
-                <h3 className="text-xl font-bold mb-4">{feat.title}</h3>
-                <p className="text-white/60 text-sm leading-relaxed">{feat.desc}</p>
-              </motion.div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-20 relative px-10">
+            <div className="absolute top-[30%] left-0 w-full h-[1px] bg-slate-100 hidden md:block z-0" />
+
+            <ProcessStep
+              number="01" icon={<Search size={36} />}
+              title="Select Policy"
+              desc="Browse through Top Private Insurers or Govt Schemes in our curated hub."
+            />
+            <ProcessStep
+              number="02" icon={<Activity size={36} />}
+              title="Tailor Context"
+              desc="Provide basic details like age and policy duration for personalized results."
+            />
+            <ProcessStep
+              number="03" icon={<Zap size={36} />}
+              title="Instant Insights"
+              desc="Ask any deep question and get precise, document-backed medical answers."
+            />
           </div>
         </div>
       </section>
 
-      {/* Hero-style Footer Section */}
-      <footer className="bg-[#1A2E2C] text-white pt-24 pb-12 px-6 overflow-hidden relative">
+      <footer className="bg-slate-50 text-slate-950 pt-40 pb-20 px-6 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-teal-500/5 rounded-full blur-[100px] -mr-40 -mt-40" />
+
         <div className="max-w-7xl mx-auto relative z-10">
-          {/* Newsletter / Upper Part */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 mb-16">
-            <div className="text-4xl font-display font-bold">
-              HealthQuery<span className="text-teal-400">.</span>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-12 mb-24">
+            <div className="text-5xl font-display font-bold tracking-tighter">
+              MEDRAG<span className="text-teal-500">.</span>
             </div>
-            <div className="w-full max-w-2xl bg-slate-900/40 rounded-full p-1 pl-8 flex items-center border border-white/5 backdrop-blur-sm">
+            <div className="w-full max-w-2xl bg-slate-200/50 rounded-[2rem] p-2 pl-10 flex items-center border border-slate-200">
               <input
                 type="text"
-                placeholder="Subscribe to our newsletter!!"
-                className="bg-transparent border-none outline-none flex-1 text-sm text-white/50 placeholder:text-white/30"
+                placeholder="Join our policy intelligence list..."
+                className="bg-transparent border-none outline-none flex-1 text-sm text-slate-900 placeholder:text-slate-400 font-medium"
               />
-              <button className="bg-[#00D0B1] text-teal-950 px-10 py-4 rounded-full font-bold text-sm hover:bg-teal-300 transition-all uppercase tracking-widest">
-                Subscribe
+              <button className="bg-teal-500 text-white px-12 py-5 rounded-[1.5rem] font-black text-[10px] hover:bg-teal-400 transition-all uppercase tracking-[0.3em]">
+                Join Now
               </button>
             </div>
           </div>
 
-          <div className="h-[1px] bg-white/5 mb-16" />
-
-          {/* Bottom Grid with Doctors Illustration */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16 items-center">
-            {/* Opening Hours */}
-            <div className="space-y-6">
-              <h4 className="text-lg font-bold uppercase tracking-widest text-white/40">Opening Hours</h4>
-              <div className="space-y-6">
-                <ScheduleRow day="Mon - Tues" time="08:00 Am - 05:00 Pm" />
-                <ScheduleRow day="Wed - Thur" time="08:00 Am - 05:00 Pm" />
-                <ScheduleRow day="Fri - Sat" time="08:00 Am - 05:00 Pm" />
-                <ScheduleRow day="Sunday" time="Closed" />
-              </div>
-            </div>
-
-            {/* Doctors in Circle - Exact Match */}
-            <div className="relative flex justify-center items-end h-80">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 opacity-20">
-                <div className="absolute inset-0 rounded-full border-[30px] border-teal-500" />
-                <div className="absolute inset-6 rounded-full border-[2px] border-teal-500/50" />
-                <div className="absolute inset-12 rounded-full border-[40px] border-teal-500" />
-              </div>
-              <img src="/doctors.png" className="w-[450px] max-w-none h-auto relative z-10 mb-[-48px]" alt="Team" />
-            </div>
-
-            {/* Address */}
-            <div className="space-y-8 text-right flex flex-col items-end">
-              <div className="space-y-2">
-                <h4 className="text-xl font-bold">Dr. Hospital Care</h4>
-                <div className="space-y-1 text-white/50 text-sm">
-                  <p>406 Glenwood Avenue</p>
-                  <p>Lockport, New York, 14094</p>
-                </div>
-              </div>
-
-              <div className="space-y-1 text-white/50 text-sm">
-                <p>Info@drsupport.com</p>
-                <p className="text-white font-bold">+1(088) 456 888</p>
-              </div>
-
-              <div className="flex gap-3">
-                {[1, 2, 3, 4, 5, 6].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border border-white/10 flex items-center justify-center text-teal-400 hover:bg-teal-400 hover:text-teal-950 transition-all cursor-pointer">
-                    <Heart size={16} />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-20 mb-24">
+            <div className="md:col-span-2 space-y-10">
+              <h3 className="text-4xl font-display font-bold leading-none tracking-tighter text-slate-900">Revolutionizing how families understand health.</h3>
+              <div className="flex gap-4">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="w-12 h-12 rounded-2xl border border-slate-200 flex items-center justify-center text-teal-600 hover:bg-teal-500 hover:text-white transition-all cursor-pointer">
+                    <Activity size={20} />
                   </div>
                 ))}
               </div>
+            </div>
+
+            <FooterList
+              title="Navigation"
+              items={["Home", "Insurance Plans", "AI Assistant", "Privacy Policy"]}
+            />
+            <FooterList
+              title="Support"
+              items={["Help Center", "Technical Docs", "API Access", "Contact Support"]}
+            />
+          </div>
+
+          <div className="h-[1px] bg-slate-200/50 mb-12" />
+
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
+            <p>© 2026 MEDRAG ARIA. ALL RIGHTS RESERVED.</p>
+            <div className="flex gap-10">
+              <button className="hover:text-teal-400 transition-colors">Terms of Service</button>
+              <button className="hover:text-teal-400 transition-colors">Privacy protocol</button>
             </div>
           </div>
         </div>
@@ -371,59 +269,67 @@ export default function LandingPage() {
 }
 
 const AppointmentField = ({ label, value }: { label: string; value: string }) => (
-  <div className="flex-1 space-y-1 w-full text-center md:text-left">
-    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{label}</label>
-    <div className="flex items-center justify-center md:justify-start gap-2 text-slate-900 font-bold group cursor-pointer text-sm">
+  <div className="flex-1 space-y-2 w-full text-center md:text-left">
+    <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em]">{label}</label>
+    <div className="flex items-center justify-center md:justify-start gap-3 text-slate-900 font-bold group cursor-pointer text-sm md:text-lg tracking-tight">
       {value}
-      <ChevronDown size={14} className="group-hover:translate-y-0.5 transition-transform text-[var(--color-primary)]" />
+      <ChevronDown size={14} className="group-hover:translate-y-0.5 transition-transform text-teal-500" />
     </div>
   </div>
 );
 
-const ServiceItem = ({ label, active = false }: { label: string; active?: boolean }) => (
-  <div className={cn(
-    "flex items-center justify-between group cursor-pointer border-b border-slate-100 pb-3 transition-colors",
-    active ? "text-[var(--color-primary)] border-b-2 border-b-[var(--color-primary)]" : "text-slate-400 hover:text-slate-700"
+const NavCircle = ({ direction, active = false }: { direction: 'left' | 'right', active?: boolean }) => (
+  <button className={cn(
+    "w-16 h-16 rounded-full flex items-center justify-center transition-all border",
+    active ? "bg-teal-500 text-white border-teal-400 shadow-xl shadow-teal-100" : "bg-white text-slate-400 border-slate-100 hover:bg-slate-50"
   )}>
-    <span className="font-bold text-sm tracking-wide uppercase">{label}</span>
-    {active && <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-primary)]" />}
-  </div>
+    <ChevronDown className={direction === 'left' ? "rotate-90" : "-rotate-90"} size={24} />
+  </button>
 );
 
-const StatCircle = ({ value, label, color }: { value: string, label: string, color: string }) => (
-  <div className="flex flex-col items-center gap-6 text-center">
-    <div className={cn(
-      "w-36 h-36 rounded-full border-2 border-slate-200 flex flex-col items-center justify-center bg-white shadow-2xl transition-all hover:scale-105",
-      color
-    )}>
-      <span className="text-3xl font-display font-extrabold">{value}</span>
-    </div>
-    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{label}</span>
-  </div>
-);
-
-const OfferingCard = ({ image, title, description, active = false }: { image: string, title: string, description?: string, active?: boolean }) => (
-  <div className="relative rounded-[2.5rem] overflow-hidden group h-[400px]">
-    <img src={image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-    <div className="absolute inset-0 bg-gradient-to-t from-teal-900/80 to-transparent" />
-    <div className="absolute bottom-10 left-10 text-white">
-      <h3 className="text-2xl font-bold">{title}</h3>
-    </div>
-    {description && (
-      <div className="absolute top-[30%] left-10 right-10 bg-white p-6 rounded-3xl shadow-2xl z-20">
-        <div className="absolute -top-3 left-6 w-6 h-6 bg-white rotate-45" />
-        <p className="text-teal-600 text-sm font-semibold leading-relaxed">
-          {description}
-        </p>
+const OfferingCard = ({ image, title, description }: { image: string, title: string, description: string }) => (
+  <div className="relative rounded-[3rem] overflow-hidden group h-[500px] border border-slate-100 shadow-2xl shadow-slate-200/20">
+    <img src={image} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-80" />
+    <div className="absolute bottom-12 left-12 right-12 text-white space-y-4">
+      <h3 className="text-3xl font-display font-bold leading-tight">{title}</h3>
+      <p className="text-sm text-white/60 leading-relaxed font-medium transition-opacity">
+        {description}
+      </p>
+      <div className="pt-4 overflow-hidden">
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-teal-400 transition-transform duration-500">
+          Learn More <ArrowRight size={12} />
+        </div>
       </div>
-    )}
+    </div>
   </div>
 );
 
-const ScheduleRow = ({ day, time }: { day: string, time: string }) => (
-  <div className="flex flex-col border-b border-white/5 pb-2">
-    <span className="text-white font-bold text-sm tracking-wide">{day}</span>
-    <span className="text-white/40 text-[10px] font-bold uppercase tracking-widest">{time}</span>
+const ProcessStep = ({ number, icon, title, desc }: { number: string, icon: any, title: string, desc: string }) => (
+  <div className="relative z-10 flex flex-col items-center gap-8 group">
+    <div className="w-32 h-32 rounded-[2.5rem] bg-white border border-slate-100 flex items-center justify-center text-teal-600 transition-all duration-500 group-hover:bg-slate-950 group-hover:text-white shadow-sm relative">
+      <div className="absolute -top-4 -right-4 w-10 h-10 bg-teal-500 text-white rounded-2xl flex items-center justify-center text-xs font-black shadow-lg">
+        {number}
+      </div>
+      {icon}
+    </div>
+    <div className="space-y-4">
+      <h3 className="text-2xl font-display font-bold text-slate-950">{title}</h3>
+      <p className="text-slate-500 text-sm leading-relaxed max-w-[280px] mx-auto font-medium">{desc}</p>
+    </div>
+  </div>
+);
+
+const FooterList = ({ title, items }: { title: string, items: string[] }) => (
+  <div className="space-y-8">
+    <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-teal-500">{title}</h4>
+    <ul className="space-y-4">
+      {items.map((item, i) => (
+        <li key={i}>
+          <button className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">{item}</button>
+        </li>
+      ))}
+    </ul>
   </div>
 );
 
