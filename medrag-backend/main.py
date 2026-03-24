@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import upload, query, documents
 from config import config
+from fastapi.staticfiles import StaticFiles
+import os
 
 app = FastAPI(title="MEDRAG HealthQuery AI Backend")
 
@@ -18,6 +20,9 @@ app.add_middleware(
 app.include_router(upload.router, tags=["Upload"])
 app.include_router(query.router, tags=["Query"])
 app.include_router(documents.router, tags=["Documents"])
+
+# Serve static PDF policy documents
+app.mount("/policies", StaticFiles(directory="policies"), name="policies")
 
 @app.get("/")
 async def root():

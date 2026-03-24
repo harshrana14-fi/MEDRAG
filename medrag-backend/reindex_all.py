@@ -40,7 +40,20 @@ def reindex_all():
             
             # 4. Add Heuristics
             fn_lower = file.lower()
-            company = file.split('_')[0] if "_" in file else file.split("-")[0]
+            raw_company = file.split('_')[0] if "_" in file else file.split("-")[0]
+            
+            # Use user-specified mappings
+            if raw_company.lower() == 'ultimate':
+                company = "ultimate care"
+            elif raw_company.lower() == 'bluecross':
+                company = "icici"
+            elif raw_company.lower() == 'brochure':
+                company = "hdfc ergo"
+            elif 'birla' in fn_lower:
+                company = "aditya birla"
+            else:
+                company = raw_company
+
             category = "Government Schemes" if ("bharat" in fn_lower or "ayushman" in fn_lower) else "Private Plans"
             upload_date = "2024-03-20 10:00:00"
 

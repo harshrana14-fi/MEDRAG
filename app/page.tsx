@@ -41,7 +41,6 @@ export default function LandingPage() {
             alt="Insurance Analysis"
             className="w-full h-full object-cover scale-110 blur-[2px]"
           />
-          <div className="absolute inset-0 bg-black/50" />
         </div>
 
         <div className="relative z-30 px-6 space-y-10 max-w-4xl mb-12 pt-32">

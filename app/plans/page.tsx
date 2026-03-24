@@ -11,7 +11,8 @@ import {
     Filter,
     FileText,
     CheckCircle2,
-    Activity
+    Activity,
+    Eye
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Navbar } from "@/components/Navbar";
@@ -178,10 +179,9 @@ const CompanyCard = ({ name, docs, onSelect }: { name: string; docs: Policy[]; o
             {docs.map(doc => (
                 <div
                     key={doc.id}
-                    onClick={() => onSelect(doc.filename)}
                     className="group-inner flex items-center justify-between p-4 rounded-2xl bg-white hover:bg-teal-50 border border-slate-100 hover:border-teal-100 transition-all cursor-pointer"
                 >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1" onClick={() => onSelect(doc.filename)}>
                         <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-inner-hover:text-teal-600 shadow-sm transition-colors">
                             <FileText size={16} />
                         </div>
@@ -189,7 +189,18 @@ const CompanyCard = ({ name, docs, onSelect }: { name: string; docs: Policy[]; o
                             {doc.filename.replace('.pdf', '').replace('.txt', '').replace(/_/g, ' ')}
                         </span>
                     </div>
-                    <ChevronRight size={16} className="text-slate-300 group-inner-hover:text-teal-600 transition-all" />
+                    <div className="flex items-center gap-2">
+                        <a 
+                            href={`http://localhost:8000/policies/${doc.filename}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="p-2 rounded-lg hover:bg-teal-100 text-slate-600 hover:text-teal-600 transition-all"
+                            title="View Original Document"
+                        >
+                            <Eye size={16} />
+                        </a>
+                        <ChevronRight size={16} className="text-slate-600 group-inner-hover:text-teal-600 transition-all" />
+                    </div>
                 </div>
             ))}
         </div>
@@ -198,7 +209,7 @@ const CompanyCard = ({ name, docs, onSelect }: { name: string; docs: Policy[]; o
             <div className="flex items-center gap-2 text-[10px] font-bold text-teal-600 uppercase tracking-widest transition-colors">
                 <CheckCircle2 size={12} /> Verified Data
             </div>
-            <ArrowRight size={18} className="text-slate-300 group-hover:text-teal-500 transition-colors" />
+            <ArrowRight size={18} className="text-slate-600 group-hover:text-teal-500 transition-colors" />
         </div>
     </div>
 );

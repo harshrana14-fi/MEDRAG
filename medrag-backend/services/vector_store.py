@@ -120,4 +120,48 @@ class VectorStore:
     def delete_document(self, filename: str):
         self.collection.delete(where={"filename": filename})
 
+    def diagnose_missing_answer(self, term: str, filename: str = None):
+        """
+        DIAGNOSTIC FUNCTION: Runs a broad similarity search and checks if the term 
+        appears in any returned chunk's text to differentiate between chunking 
+        and ranking issues.
+        """
+        from services.embedder import embedder
+        
+        print(f"\n--- DIAGNOSTIC: Searching for '{term}' ---")
+        query_embedding = embedder.embed_query(term)
+        
+        # Broad search: top 20
+        results = self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=20,
+            where={"filename": filename} if filename else None
+        )
+        
+        found_in_retrieval = False
+        term_lower = term.lower()
+        
+        for i, doc in enumerate(results['documents'][0]):
+            if term_lower in doc.lower():
+                found_in_retrieval = True
+                section = results['metadatas'][0][i].get('section', 'Unknown')
+                print(f"[FOUND] Rank {i+1} in section: {section}")
+                break
+        
+        if found_in_retrieval:
+            print("RESULT: Retrieval Ranking Issue (Term found in top 20 but might not be in top K or correctly prioritized).")
+        else:
+            # Broad search without embedding (if chroma allowed full text search, but we use embeddings)
+            # Let's just check if it's anywhere in the document at all
+            all_chunks = self.collection.get(
+                where={"filename": filename} if filename else None
+            )
+            found_anywhere = any(term_lower in d.lower() for d in all_chunks['documents'])
+            
+            if found_anywhere:
+                print("RESULT: Retrieval Embedding/Ranking Issue (Term exists in doc but not in top 20 semantic search).")
+            else:
+                print("RESULT: Chunking/Ingestion Issue (Term not found in any chunk text at all).")
+        print("--- END DIAGNOSTIC ---\n")
+
 vector_store = VectorStore()

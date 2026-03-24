@@ -170,5 +170,40 @@ ANSWER (cite the source document, be specific about costs and services based on 
                 except Exception: pass
             raise
 
+    def expand_query(self, query: str) -> list[str]:
+        """Expands the user query into 4-6 semantic variants for better retrieval."""
+        expansion_prompt = f"""
+        Expand the following insurance-related search query into 4-6 semantic variants.
+        Focus on medical terms, procedure synonyms, and insurance terminology.
+        Return ONLY a comma-separated list of variants.
+        
+        Example: "hair transplant" -> hair transplantation, hair restoration, cosmetic hair procedure, alopecia treatment, hair loss treatment
+        
+        Query: {query}
+        Variants:"""
+        
+        try:
+            # Use a faster/cheaper call if available, but for now use the same logic
+            raw_variants = ""
+            if self.provider == "gemini" and config.GEMINI_API_KEY:
+                # Direct call without system prompt for speed/simplicity if possible, 
+                # but let's stick to the existing methods for consistency
+                model = genai.GenerativeModel(model_name=config.GEMINI_MODEL)
+                response = model.generate_content(expansion_prompt)
+                raw_variants = response.text
+            elif self.provider == "groq" and config.GROQ_API_KEY:
+                raw_variants = self.call_groq(expansion_prompt)
+            else:
+                raw_variants = self.call_ollama(expansion_prompt)
+            
+            variants = [v.strip() for v in raw_variants.split(',') if v.strip()]
+            # Ensure the original query is included
+            if query not in variants:
+                variants.insert(0, query)
+            return variants[:7] # Limit to 6-7 variants
+        except Exception as e:
+            print(f"Error expanding query: {str(e)}")
+            return [query]
+
 
 llm_service = LLMService()
