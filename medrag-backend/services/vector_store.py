@@ -1,21 +1,36 @@
 import chromadb
-from chromadb.config import Settings
-from config import config
+import os
 import uuid
+import datetime
+from config import config
 
 class VectorStore:
     def __init__(self):
-        self.client = chromadb.PersistentClient(path=config.CHROMA_PERSIST_DIR)
-        self.collection = self.client.get_or_create_collection(name=config.CHROMA_COLLECTION)
+        try:
+            # ✅ Ensure directory exists (VERY IMPORTANT for Render)
+            os.makedirs(config.CHROMA_PERSIST_DIR, exist_ok=True)
+
+            self.client = chromadb.PersistentClient(path=config.CHROMA_PERSIST_DIR)
+            self.collection = self.client.get_or_create_collection(name=config.CHROMA_COLLECTION)
+            print("✅ ChromaDB initialized successfully")
+        except Exception as e:
+            print("❌ ERROR initializing vector store:", str(e))
+            self.collection = None
 
     def add_documents(self, chunks: list, embeddings: list, metadatas: list):
-        ids = [str(uuid.uuid4()) for _ in chunks]
-        self.collection.add(
-            ids=ids,
-            embeddings=embeddings,
-            documents=chunks,
-            metadatas=metadatas
-        )
+        if not self.collection:
+            print("⚠️ Collection not initialized")
+            return
+        try:
+            ids = [str(uuid.uuid4()) for _ in chunks]
+            self.collection.add(
+                ids=ids,
+                embeddings=embeddings,
+                documents=chunks,
+                metadatas=metadatas
+            )
+        except Exception as e:
+            print("❌ Error adding documents:", str(e))
 
     def detect_section_intent(self, query: str) -> list[str]:
         """Universal intent detection for any policy query"""
@@ -41,127 +56,111 @@ class VectorStore:
 
     def query(self, query_embedding: list, query_text: str = "", top_k: int = 10, filename: str = None, allowed_sections: list | None = None):
         """Retrieve with 3-level fallback strategy and special overview handling."""
-        
-        # Special handling: if query is about features/overview/summary — search the ENTIRE document with higher top_k
-        overview_keywords = ["key feature", "features", "overview", "about", "summary", "highlights", "tell me"]
-        if query_text and any(kw in query_text.lower() for kw in overview_keywords):
-            print("[OVERVIEW QUERY] Fetching broad context (top_k=8)")
-            results = self.collection.query(
-                query_embeddings=[query_embedding],
-                n_results=8,
-                where={"filename": filename} if filename else None
-            )
-            return results
+        if not self.collection:
+            return {}
 
-        # LEVEL 1: Filtered search by detected section
-        where_filter = {}
-        if filename and allowed_sections:
-            where_filter = {"$and": [{"filename": filename}, {"section": {"$in": allowed_sections}}]}
-        elif filename:
-            where_filter = {"filename": filename}
-        elif allowed_sections:
-            where_filter = {"section": {"$in": allowed_sections}}
+        try:
+            # Special handling for overview queries
+            overview_keywords = ["key feature", "features", "overview", "about", "summary", "highlights", "tell me"]
+            if query_text and any(kw in query_text.lower() for kw in overview_keywords):
+                return self.collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=8,
+                    where={"filename": filename} if filename else None
+                )
 
-        results = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k,
-            where=where_filter if where_filter else None
-        )
+            # LEVEL 1: Filtered search
+            where_filter = {}
+            if filename and allowed_sections:
+                where_filter = {"$and": [{"filename": filename}, {"section": {"$in": allowed_sections}}]}
+            elif filename:
+                where_filter = {"filename": filename}
+            elif allowed_sections:
+                where_filter = {"section": {"$in": allowed_sections}}
 
-        # LEVEL 2: If < 2 results and we HAD a section filter, try semantic search only (filename only)
-        if len(results['documents'][0]) < 2 and allowed_sections:
-            print("[FALLBACK L2] Trying semantic-only search (ignoring sections)")
             results = self.collection.query(
                 query_embeddings=[query_embedding],
                 n_results=top_k,
-                where={"filename": filename} if filename else None
+                where=where_filter if where_filter else None
             )
 
-        # LEVEL 3: If still empty, get top chunks from any policy (last resort)
-        if len(results['documents'][0]) == 0:
-            print("[FALLBACK L3] Getting top chunks from any doc")
-            results = self.collection.query(
-                query_embeddings=[query_embedding],
-                n_results=top_k,
-                where={"document_type": "insurance_policy"}
-            )
+            # LEVEL 2: Fallback if empty and had section filter
+            if (not results['documents'] or not results['documents'][0]) and allowed_sections:
+                results = self.collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=top_k,
+                    where={"filename": filename} if filename else None
+                )
+
+            # LEVEL 3: Final fallback
+            if not results['documents'] or not results['documents'][0]:
+                results = self.collection.query(
+                    query_embeddings=[query_embedding],
+                    n_results=top_k,
+                    where={"document_type": "insurance_policy"}
+                )
             
-        return results
-
-
-
+            return results
+        except Exception as e:
+            print("❌ Query error:", str(e))
+            return {}
 
     def get_all_documents(self):
-        # Retrieve all unique documents based on metadata filenames
-        results = self.collection.get()
-        if not results or 'ids' not in results or not results['ids']:
+        if not self.collection:
             return []
+        try:
+            results = self.collection.get()
+            if not results or not results.get("ids"):
+                return []
             
-        unique_docs = {}
-        for i in range(len(results['ids'])):
-            metadatas = results.get('metadatas')
-            if not metadatas or i >= len(metadatas) or not metadatas[i]:
-                continue
-                
-            meta = metadatas[i]
-            filename = meta.get('filename')
-            if not filename:
-                continue
-                
-            unique_docs[filename] = {
-                "id": results['ids'][i],
-                "filename": filename,
-                "upload_date": meta.get('upload_date', 'Unknown'),
-                "category": meta.get('category', 'Others'),
-                "company": meta.get('company', 'Others')
-            }
-        return list(unique_docs.values())
+            metadatas = results.get("metadatas", [])
+            unique_docs = {}
+            for i, meta in enumerate(metadatas):
+                if not meta: continue
+                filename = meta.get("filename")
+                if not filename: continue
+                unique_docs[filename] = {
+                    "id": results["ids"][i],
+                    "filename": filename,
+                    "upload_date": meta.get("upload_date", "Unknown"),
+                    "category": meta.get("category", "Others"),
+                    "company": meta.get("company", "Others"),
+                }
+            return list(unique_docs.values())
+        except Exception as e:
+            print("❌ Error fetching documents:", str(e))
+            return []
 
     def delete_document(self, filename: str):
-        self.collection.delete(where={"filename": filename})
+        if not self.collection:
+            return
+        try:
+            self.collection.delete(where={"filename": filename})
+        except Exception as e:
+            print("❌ Delete error:", str(e))
 
     def diagnose_missing_answer(self, term: str, filename: str = None):
-        """
-        DIAGNOSTIC FUNCTION: Runs a broad similarity search and checks if the term 
-        appears in any returned chunk's text to differentiate between chunking 
-        and ranking issues.
-        """
+        """Diagnostic function for retrieval issues"""
         from services.embedder import embedder
-        
-        print(f"\n--- DIAGNOSTIC: Searching for '{term}' ---")
-        query_embedding = embedder.embed_query(term)
-        
-        # Broad search: top 20
-        results = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=20,
-            where={"filename": filename} if filename else None
-        )
-        
-        found_in_retrieval = False
-        term_lower = term.lower()
-        
-        for i, doc in enumerate(results['documents'][0]):
-            if term_lower in doc.lower():
-                found_in_retrieval = True
-                section = results['metadatas'][0][i].get('section', 'Unknown')
-                print(f"[FOUND] Rank {i+1} in section: {section}")
-                break
-        
-        if found_in_retrieval:
-            print("RESULT: Retrieval Ranking Issue (Term found in top 20 but might not be in top K or correctly prioritized).")
-        else:
-            # Broad search without embedding (if chroma allowed full text search, but we use embeddings)
-            # Let's just check if it's anywhere in the document at all
-            all_chunks = self.collection.get(
+        try:
+            query_embedding = embedder.embed_query(term)
+            results = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=20,
                 where={"filename": filename} if filename else None
             )
-            found_anywhere = any(term_lower in d.lower() for d in all_chunks['documents'])
-            
-            if found_anywhere:
-                print("RESULT: Retrieval Embedding/Ranking Issue (Term exists in doc but not in top 20 semantic search).")
+            found_in_retrieval = False
+            term_lower = term.lower()
+            for i, doc in enumerate(results.get('documents', [[]])[0]):
+                if term_lower in doc.lower():
+                    found_in_retrieval = True
+                    break
+            if found_in_retrieval:
+                print(f"RESULT: Term '{term}' found in top 20 retrieval.")
             else:
-                print("RESULT: Chunking/Ingestion Issue (Term not found in any chunk text at all).")
-        print("--- END DIAGNOSTIC ---\n")
+                print(f"RESULT: Term '{term}' NOT found in top 20 retrieval.")
+        except Exception as e:
+            print(f"Diagnostic failed: {e}")
 
+# ✅ Global instance
 vector_store = VectorStore()
