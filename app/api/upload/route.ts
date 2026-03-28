@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
         }
 
-        const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000';
+        const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
         // Create new FormData for backend
         const backendFormData = new FormData();

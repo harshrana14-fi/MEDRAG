@@ -39,7 +39,7 @@ export default function PlansPage() {
 
     const fetchDocuments = async () => {
         try {
-            const res = await fetch("http://localhost:8000/documents");
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents`);
             if (res.ok) {
                 const data = await res.json();
                 setDocuments(data);
@@ -191,7 +191,7 @@ const CompanyCard = ({ name, docs, onSelect }: { name: string; docs: Policy[]; o
                     </div>
                     <div className="flex items-center gap-2">
                         <a 
-                            href={`http://localhost:8000/policies/${doc.filename}`} 
+                            href={`${process.env.NEXT_PUBLIC_API_URL}/policies/${doc.filename}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="p-2 rounded-lg hover:bg-teal-100 text-slate-600 hover:text-teal-600 transition-all"
