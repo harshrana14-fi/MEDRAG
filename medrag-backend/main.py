@@ -11,7 +11,8 @@ app = FastAPI(title="MEDRAG HealthQuery AI Backend")
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://medrag-frontend.onrender.com",  # your deployed frontend
+    "https://medrag-frontend.onrender.com",
+    "https://medrag-six.vercel.app/",  # your deployed frontend
 ]
 
 # Optional: add from environment variable (safer)
