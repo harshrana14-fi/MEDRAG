@@ -7,19 +7,19 @@ from config import config
 class VectorStore:
     def __init__(self):
         try:
-            # ✅ Ensure directory exists (VERY IMPORTANT for Render)
+            # Ensure directory exists (VERY IMPORTANT for Render)
             os.makedirs(config.CHROMA_PERSIST_DIR, exist_ok=True)
 
             self.client = chromadb.PersistentClient(path=config.CHROMA_PERSIST_DIR)
             self.collection = self.client.get_or_create_collection(name=config.CHROMA_COLLECTION)
-            print("✅ ChromaDB initialized successfully")
+            print("ChromaDB initialized successfully")
         except Exception as e:
-            print("❌ ERROR initializing vector store:", str(e))
+            print("ERROR initializing vector store:", str(e))
             self.collection = None
 
     def add_documents(self, chunks: list, embeddings: list, metadatas: list):
         if not self.collection:
-            print("⚠️ Collection not initialized")
+            print("Collection not initialized")
             return
         try:
             ids = [str(uuid.uuid4()) for _ in chunks]
@@ -30,7 +30,7 @@ class VectorStore:
                 metadatas=metadatas
             )
         except Exception as e:
-            print("❌ Error adding documents:", str(e))
+            print("Error adding documents:", str(e))
 
     def detect_section_intent(self, query: str) -> list[str]:
         """Universal intent detection for any policy query"""
@@ -54,7 +54,7 @@ class VectorStore:
         
         return matched if matched else list(UNIVERSAL_INTENT_MAP.keys())
 
-    def query(self, query_embedding: list, query_text: str = "", top_k: int = 10, filename: str = None, allowed_sections: list | None = None):
+    def query(self, query_embedding: list, query_text: str = "", top_k: int = 10, filename: str = None, allowed_sections: list | None = None, user_id: str = None):
         """Retrieve with 3-level fallback strategy and special overview handling."""
         if not self.collection:
             return {}
@@ -63,25 +63,39 @@ class VectorStore:
             # Special handling for overview queries
             overview_keywords = ["key feature", "features", "overview", "about", "summary", "highlights", "tell me"]
             if query_text and any(kw in query_text.lower() for kw in overview_keywords):
+                where_filter = {"filename": filename} if filename else None
+                # Add user_id filter if provided
+                if user_id:
+                    if where_filter:
+                        where_filter = {"$and": [where_filter, {"$or": [{"user_id": user_id}, {"user_id": "public"}]}]}
+                    else:
+                        where_filter = {"$or": [{"user_id": user_id}, {"user_id": "public"}]}
+
                 return self.collection.query(
                     query_embeddings=[query_embedding],
                     n_results=8,
-                    where={"filename": filename} if filename else None
+                    where=where_filter
                 )
 
             # LEVEL 1: Filtered search
-            where_filter = {}
-            if filename and allowed_sections:
-                where_filter = {"$and": [{"filename": filename}, {"section": {"$in": allowed_sections}}]}
-            elif filename:
-                where_filter = {"filename": filename}
-            elif allowed_sections:
-                where_filter = {"section": {"$in": allowed_sections}}
+            filters = []
+            if filename:
+                filters.append({"filename": filename})
+            if allowed_sections:
+                filters.append({"section": {"$in": allowed_sections}})
+            if user_id:
+                filters.append({"$or": [{"user_id": user_id}, {"user_id": "public"}]})
+
+            where_filter = None
+            if len(filters) > 1:
+                where_filter = {"$and": filters}
+            elif len(filters) == 1:
+                where_filter = filters[0]
 
             results = self.collection.query(
                 query_embeddings=[query_embedding],
                 n_results=top_k,
-                where=where_filter if where_filter else None
+                where=where_filter
             )
 
             # LEVEL 2: Fallback if empty and had section filter
@@ -102,14 +116,22 @@ class VectorStore:
             
             return results
         except Exception as e:
-            print("❌ Query error:", str(e))
+            print("Query error:", str(e))
             return {}
 
-    def get_all_documents(self):
+    def get_all_documents(self, user_id: str = None):
         if not self.collection:
             return []
         try:
-            results = self.collection.get()
+            # Filter by user_id or public documents
+            if user_id:
+                # Show user's docs + public docs
+                where_filter = {"$or": [{"user_id": user_id}, {"user_id": "public"}]}
+            else:
+                # Show ONLY public docs
+                where_filter = {"user_id": "public"}
+            
+            results = self.collection.get(where=where_filter)
             if not results or not results.get("ids"):
                 return []
             
@@ -128,16 +150,20 @@ class VectorStore:
                 }
             return list(unique_docs.values())
         except Exception as e:
-            print("❌ Error fetching documents:", str(e))
+            print("Error fetching documents:", str(e))
             return []
 
-    def delete_document(self, filename: str):
+    def delete_document(self, filename: str, user_id: str = None):
         if not self.collection:
             return
         try:
-            self.collection.delete(where={"filename": filename})
+            where_filter = {"filename": filename}
+            if user_id:
+                where_filter = {"$and": [{"filename": filename}, {"user_id": user_id}]}
+            
+            self.collection.delete(where=where_filter)
         except Exception as e:
-            print("❌ Delete error:", str(e))
+            print("Delete error:", str(e))
 
     def diagnose_missing_answer(self, term: str, filename: str = None):
         """Diagnostic function for retrieval issues"""
@@ -162,5 +188,5 @@ class VectorStore:
         except Exception as e:
             print(f"Diagnostic failed: {e}")
 
-# ✅ Global instance
+# Global instance
 vector_store = VectorStore()

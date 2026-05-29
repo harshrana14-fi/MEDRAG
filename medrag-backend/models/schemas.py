@@ -27,3 +27,24 @@ class DocumentInfo(BaseModel):
 
 class Message(BaseModel):
     message: str
+
+# Auth Schemas
+class User(BaseModel):
+    email: str
+    full_name: Optional[str] = None
+    disabled: Optional[bool] = None
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+    full_name: Optional[str] = None
+
+class UserInDB(User):
+    hashed_password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None

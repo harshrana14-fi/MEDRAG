@@ -15,8 +15,10 @@ export async function POST(req: NextRequest) {
         const backendFormData = new FormData();
         backendFormData.append('file', file);
 
+        const authHeader = req.headers.get('Authorization');
         const response = await fetch(`${backendUrl}/upload`, {
             method: 'POST',
+            headers: authHeader ? { 'Authorization': authHeader } : {},
             body: backendFormData,
         });
 

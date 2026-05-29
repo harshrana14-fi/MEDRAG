@@ -1,16 +1,21 @@
-from fastapi import APIRouter, HTTPException
-from models.schemas import QueryRequest, QueryResponse
+from fastapi import APIRouter, HTTPException, Depends
+from services.auth import get_current_user, get_current_user_optional
+from models.schemas import QueryRequest, QueryResponse, User
 from services.embedder import embedder
 from services.vector_store import vector_store
 from services.llm import llm_service
+from typing import Optional
 
 router = APIRouter()
 
 @router.post("/query", response_model=QueryResponse)
-async def query_documents(request: QueryRequest):
+async def query_documents(
+    request: QueryRequest,
+    current_user: Optional[User] = Depends(get_current_user_optional)
+):
+    user_id = current_user["email"] if current_user else None
     try:
-        # 1. QUERY EXPANSION: Generate 4-6 semantic variants
-        # Example: "hair transplant" -> "hair restoration", "cosmetic procedure", etc.
+        # 1. QUERY EXPANSION
         query_variants = llm_service.expand_query(request.query)
         print(f"QUERY: {request.query} | VARIANTS: {query_variants}")
 
@@ -42,23 +47,23 @@ async def query_documents(request: QueryRequest):
                 # Query 1: Focus on Coverage
                 q1 = f"Is {variant} covered benefit payable?"
                 emb1 = embedder.embed_query(q1)
-                res1 = vector_store.query(emb1, query_text=q1, filename=request.selectedPolicy, allowed_sections=["COVERAGE"], top_k=10)
+                res1 = vector_store.query(emb1, query_text=q1, filename=request.selectedPolicy, allowed_sections=["COVERAGE"], top_k=10, user_id=user_id)
                 add_refined_results(res1)
                 
                 # Query 2: Focus on Exclusions (CRITICAL for "not available" issues)
                 q2 = f"Is {variant} excluded permanent exclusion not covered?"
                 emb2 = embedder.embed_query(q2)
-                res2 = vector_store.query(emb2, query_text=q2, filename=request.selectedPolicy, allowed_sections=["EXCLUSIONS"], top_k=15)
+                res2 = vector_store.query(emb2, query_text=q2, filename=request.selectedPolicy, allowed_sections=["EXCLUSIONS"], top_k=15, user_id=user_id)
                 add_refined_results(res2)
 
                 # Query 3: Broad Semantic Search (Safety net for mis-tagged chunks)
                 emb3 = embedder.embed_query(variant)
-                res3 = vector_store.query(emb3, query_text=variant, filename=request.selectedPolicy, allowed_sections=None, top_k=10)
+                res3 = vector_store.query(emb3, query_text=variant, filename=request.selectedPolicy, allowed_sections=None, top_k=10, user_id=user_id)
                 add_refined_results(res3)
             else:
                 # Normal retrieval for other intents
                 emb = embedder.embed_query(variant)
-                res = vector_store.query(emb, query_text=variant, filename=request.selectedPolicy, allowed_sections=allowed_sections)
+                res = vector_store.query(emb, query_text=variant, filename=request.selectedPolicy, allowed_sections=allowed_sections, user_id=user_id)
                 add_refined_results(res)
 
         if not all_documents:

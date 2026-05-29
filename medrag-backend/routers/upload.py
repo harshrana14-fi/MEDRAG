@@ -1,9 +1,10 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from services.pdf_parser import extract_text_from_pdf
 from services.chunker import chunk_sections
 from services.embedder import embedder
 from services.vector_store import vector_store
-from models.schemas import Message
+from services.auth import get_current_user
+from models.schemas import Message, User
 import os
 import shutil
 import datetime
@@ -11,7 +12,10 @@ import datetime
 router = APIRouter()
 
 @router.post("/upload", response_model=Message)
-async def upload_document(file: UploadFile = File(...)):
+async def upload_document(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
@@ -46,17 +50,25 @@ async def upload_document(file: UploadFile = File(...)):
         company = file.filename.split('_')[0] if "_" in file.filename else file.filename.split("-")[0]
         category = "Government Schemes" if ("bharat" in fn_lower or "ayushman" in fn_lower) else "Private Plans"
 
+        metadata = {
+            "upload_date": upload_date,
+            "company": company,
+            "category": category,
+            "filename": file.filename,
+            "user_id": current_user["email"]
+        }
+
         for m in metadatas:
-            m["upload_date"] = upload_date
-            m["company"] = company
-            m["category"] = category
+            m.update(metadata)
             
         vector_store.add_documents(chunks, embeddings, metadatas)
 
+        # 5. Upload original PDF to MongoDB GridFS
+        from services.mongodb import mongodb_service
+        with open(temp_path, "rb") as f:
+            await mongodb_service.upload_file(f.read(), file.filename, metadata=metadata)
 
-
-
-        return {"message": f"Successfully processed {file.filename}"}
+        return {"message": f"Successfully processed and stored {file.filename} in MongoDB"}
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

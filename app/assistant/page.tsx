@@ -2,34 +2,36 @@
 
 import React, { useState, useRef, useEffect, Suspense } from "react";
 import {
-    Send,
-    FileText,
-    Activity,
-    ShieldCheck,
-    User,
-    ArrowLeft,
-    Download,
-    CheckCircle2,
-    Zap,
-    MessageSquare,
-    AlertCircle,
-    Upload
+    Send as SendIcon,
+    FileText as FileIcon,
+    Activity as ActivityIcon,
+    ShieldCheck as ShieldIcon,
+    User as UserIcon,
+    ArrowLeft as BackIcon,
+    Download as DownloadIcon,
+    CheckCircle2 as CheckIcon,
+    Zap as ZapIcon,
+    MessageSquare as ChatIcon,
+    AlertCircle as AlertIcon,
+    Upload as UploadIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/Button";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 function AssistantContent() {
+    const { user, token } = useAuth();
     const searchParams = useSearchParams();
-    const initialPolicy = searchParams.get("policy");
+    const policyFromUrl = searchParams.get("policy");
 
     const [query, setQuery] = useState("");
     const [messages, setMessages] = useState<any[]>([]);
     const [isTyping, setIsTyping] = useState(false);
-    const [selectedPolicy, setSelectedPolicy] = useState<string | null>(initialPolicy);
-    const [isAnalyzed, setIsAnalyzed] = useState(!!initialPolicy);
+    const [selectedPolicy, setSelectedPolicy] = useState<string | null>(null);
+    const [isAnalyzed, setIsAnalyzed] = useState(false);
 
     const [questionnaire, setQuestionnaire] = useState({
         policyYears: 0,
@@ -44,14 +46,16 @@ function AssistantContent() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    // Initial load from URL
     useEffect(() => {
-        if (initialPolicy) {
-            setSelectedPolicy(initialPolicy);
+        if (policyFromUrl) {
+            const cleanName = policyFromUrl.replace('.pdf', '').replace('.txt', '').replace(/_/g, ' ').toUpperCase();
+            setSelectedPolicy(policyFromUrl);
             setIsAnalyzed(true);
             setMessages([
                 {
                     role: "assistant",
-                    content: `Hi there! I've analyzed the **${initialPolicy.replace('.pdf', '').replace('.txt', '').replace(/_/g, ' ').toUpperCase()}** policy for you.\n\nTo give you precise advice on waiting periods and sub-limits, could you tell me your **age** and **how long you've had this policy**?`,
+                    content: `Hi there! I've analyzed the **${cleanName}** policy for you.\n\nTo give you precise advice on waiting periods and sub-limits, could you tell me your **age** and **how long you've had this policy**?`,
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                 }
             ]);
@@ -64,7 +68,7 @@ function AssistantContent() {
                 }
             ]);
         }
-    }, [initialPolicy]);
+    }, [policyFromUrl]);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -126,6 +130,10 @@ function AssistantContent() {
     };
 
     const handleUploadClick = () => {
+        if (!user) {
+            window.location.href = "/auth?redirect=/assistant";
+            return;
+        }
         fileInputRef.current?.click();
     };
 
@@ -144,6 +152,9 @@ function AssistantContent() {
         try {
             const res = await fetch('/api/upload', {
                 method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
                 body: formData,
             });
 
@@ -181,12 +192,12 @@ function AssistantContent() {
                     <div className="flex items-center gap-4">
                         <Link href="/plans">
                             <div className="w-9 h-9 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 hover:text-teal-600 border border-slate-100 cursor-pointer transition-colors">
-                                <ArrowLeft size={16} />
+                                <BackIcon size={16} />
                             </div>
                         </Link>
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center text-white shrink-0">
-                                <ShieldCheck size={20} />
+                                <ShieldIcon size={20} />
                             </div>
                             <div className="overflow-hidden">
                                 <h1 className="text-base md:text-lg font-display font-bold text-slate-900 leading-none truncate max-w-xs md:max-w-md">
@@ -201,7 +212,7 @@ function AssistantContent() {
 
                     <div className="flex items-center gap-4">
                         <button className="hidden md:flex items-center gap-2 bg-slate-50 text-slate-600 px-4 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest hover:bg-slate-100 border border-slate-200 transition-all">
-                            <Download size={14} /> Report
+                            <DownloadIcon size={14} /> Report
                         </button>
                         <div className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" />
                     </div>
@@ -215,7 +226,7 @@ function AssistantContent() {
                                     <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center shrink-0 shadow-sm",
                                         m.role === "user" ? "bg-slate-900 text-white" : "bg-teal-500 text-white"
                                     )}>
-                                        {m.role === "user" ? <User size={16} /> : <Activity size={16} />}
+                                        {m.role === "user" ? <UserIcon size={16} /> : <ActivityIcon size={16} />}
                                     </div>
 
                                     <div className={cn("flex flex-col space-y-1 max-w-[85%]", m.role === "user" ? "items-end" : "items-start")}>
@@ -227,7 +238,7 @@ function AssistantContent() {
                                                 <div className="mt-4 pt-3 border-t border-teal-200/20 flex flex-wrap gap-2">
                                                     {m.sources.map((s: string, j: number) => (
                                                         <span key={j} className="text-[8px] bg-white text-teal-600 px-2 py-0.5 rounded-md border border-teal-100 font-bold uppercase tracking-widest">
-                                                            <FileText size={8} className="inline mr-1" /> {s.replace('.txt', '').replace('.pdf', '')}
+                                                            <FileIcon size={8} className="inline mr-1" /> {s.replace('.txt', '').replace('.pdf', '')}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -241,7 +252,7 @@ function AssistantContent() {
                             {isTyping && (
                                 <div className="flex items-center gap-3">
                                     <div className="w-9 h-9 rounded-lg bg-teal-500 text-white flex items-center justify-center shrink-0">
-                                        <Activity size={16} />
+                                        <ActivityIcon size={16} />
                                     </div>
                                     <div className="bg-teal-50/50 px-4 py-2 rounded-xl flex gap-1">
                                         {[0, 1, 2].map((i) => (
@@ -260,7 +271,7 @@ function AssistantContent() {
                                     className="flex-1 bg-slate-50 border border-transparent focus:border-teal-500 rounded-xl px-4 py-3 text-sm font-medium outline-none transition-all placeholder:text-slate-400 text-slate-900"
                                 />
                                 <Button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-6">
-                                    <Send size={18} />
+                                    <SendIcon size={18} />
                                 </Button>
                             </form>
                         </div>
@@ -269,21 +280,26 @@ function AssistantContent() {
                     <aside className="w-full lg:w-72 space-y-6">
                         <input type="file" ref={fileInputRef} onChange={onFileSelect} accept=".pdf" className="hidden" />
 
-                        <section className="bg-slate-100 text-slate-900 p-6 rounded-3xl shadow-xl border border-slate-200">
+                        <section className="bg-slate-100 text-slate-900 p-6 rounded-3xl shadow-xl border border-slate-200 relative overflow-hidden group">
                             <h4 className="text-[10px] uppercase tracking-[0.2em] font-black text-teal-400 mb-4 flex items-center gap-2">
-                                <Upload size={12} /> Custom Document
+                                <UploadIcon size={12} /> Custom Document
                             </h4>
                             <p className="text-[11px] text-slate-500 mb-6 leading-relaxed">
                                 Want to analyze your own policy PDF? Upload it here for instant medical intelligence.
                             </p>
-                            <Button onClick={handleUploadClick} disabled={isUploading} className="w-full bg-teal-500 hover:bg-teal-400 text-white font-bold text-[11px] py-3 rounded-xl border-none shadow-lg shadow-teal-500/20 transition-colors">
+                            <Button 
+                                onClick={handleUploadClick} 
+                                disabled={isUploading} 
+                                className="w-full bg-teal-500 hover:bg-teal-400 text-white font-bold text-[11px] py-3 rounded-xl border-none shadow-lg shadow-teal-500/20 transition-colors"
+                            >
                                 {isUploading ? "Processing..." : "SELECT FILE"}
                             </Button>
                         </section>
 
+
                         <section className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
                             <h4 className="text-[10px] uppercase tracking-widest font-black text-slate-400 flex items-center gap-2">
-                                <CheckCircle2 size={12} className="text-teal-500" /> Patient Profile
+                                <CheckIcon size={12} className="text-teal-500" /> Patient Profile
                             </h4>
                             <div className="space-y-3">
                                 <ProfileItem label="Current Age" value={`${questionnaire.age} Years`} />
@@ -295,7 +311,7 @@ function AssistantContent() {
 
                         <section className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm space-y-4">
                             <h4 className="text-[10px] uppercase tracking-widest font-black text-slate-400 flex items-center gap-2">
-                                <Zap size={12} className="text-amber-500" /> Quick Queries
+                                <ZapIcon size={12} className="text-amber-500" /> Quick Queries
                             </h4>
                             <div className="space-y-2">
                                 {suggestedQuestions.map((q, i) => (
@@ -304,7 +320,7 @@ function AssistantContent() {
                                         onClick={() => handleSubmit(q)}
                                         className="w-full text-left p-3 rounded-xl border border-slate-50 hover:border-teal-100 hover:bg-teal-50/30 text-[11px] font-medium text-slate-600 transition-all flex items-start gap-2 group"
                                     >
-                                        <MessageSquare size={12} className="shrink-0 mt-0.5 text-slate-400 group-hover:text-teal-500" />
+                                        <ChatIcon size={12} className="shrink-0 mt-0.5 text-slate-400 group-hover:text-teal-500" />
                                         {q}
                                     </button>
                                 ))}
@@ -313,7 +329,7 @@ function AssistantContent() {
 
                         <div className="bg-slate-900 text-white p-6 rounded-3xl shadow-xl shadow-slate-200 transition-colors">
                             <div className="flex items-center gap-2 mb-3">
-                                <AlertCircle size={14} className="text-teal-400" />
+                                <AlertIcon size={14} className="text-teal-400" />
                                 <span className="text-[10px] font-bold uppercase tracking-wider">AI Insight</span>
                             </div>
                             <p className="text-[11px] leading-relaxed text-slate-300 font-medium italic">
@@ -336,7 +352,7 @@ const ProfileItem = ({ label, value }: { label: string; value: string }) => (
 
 export default function AssistantPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center text-teal-400 font-black tracking-widest">BOOTING_ASSISTANT...</div>}>
+        <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center text-teal-400 font-black tracking-widest uppercase">Initializing Assistant...</div>}>
             <AssistantContent />
         </Suspense>
     );

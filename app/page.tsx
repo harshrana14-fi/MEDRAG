@@ -156,9 +156,11 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <Button className="bg-slate-950 text-white rounded-2xl px-12 py-7 h-auto font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 transition-all">
-              Discover Our Method
-            </Button>
+            <Link href="/how-it-works">
+              <Button className="bg-slate-950 text-white rounded-2xl px-12 py-7 h-auto font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-slate-200 transition-all">
+                Discover Our Method
+              </Button>
+            </Link>
           </div>
 
           <div className="relative">
@@ -244,11 +246,21 @@ export default function LandingPage() {
 
             <FooterList
               title="Navigation"
-              items={["Home", "Insurance Plans", "AI Assistant", "Privacy Policy"]}
+              items={[
+                { label: "Home", href: "/" },
+                { label: "Insurance Plans", href: "/plans" },
+                { label: "How it Works", href: "/how-it-works" },
+                { label: "Privacy Policy", href: "#" }
+              ]}
             />
             <FooterList
               title="Support"
-              items={["Help Center", "Technical Docs", "API Access", "Contact Support"]}
+              items={[
+                { label: "Help Center", href: "#" },
+                { label: "Technical Docs", href: "#" },
+                { label: "API Access", href: "#" },
+                { label: "Contact Support", href: "#" }
+              ]}
             />
           </div>
 
@@ -319,13 +331,15 @@ const ProcessStep = ({ number, icon, title, desc }: { number: string, icon: any,
   </div>
 );
 
-const FooterList = ({ title, items }: { title: string, items: string[] }) => (
+const FooterList = ({ title, items }: { title: string, items: { label: string, href: string }[] }) => (
   <div className="space-y-8">
     <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-teal-500">{title}</h4>
     <ul className="space-y-4">
       {items.map((item, i) => (
         <li key={i}>
-          <button className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">{item}</button>
+          <Link href={item.href} className="text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+            {item.label}
+          </Link>
         </li>
       ))}
     </ul>

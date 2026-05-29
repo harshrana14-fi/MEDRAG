@@ -16,6 +16,14 @@ class Config:
     
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
     
+    MONGODB_URL = os.getenv("MONGODB_URL")
+    MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "medrag_db")
+    
+    # Auth Security
+    SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here-for-development")
+    ALGORITHM = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week
+    
     CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_data")
     CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "health_documents")
     

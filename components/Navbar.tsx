@@ -4,7 +4,12 @@ import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
+import { useAuth } from "@/context/AuthContext";
+import { AuthModal } from "./AuthModal";
+
 export const Navbar = () => {
+    const { user, logout } = useAuth();
+
     return (
         <nav className="fixed top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-7xl h-20 z-50 flex items-center justify-between px-10 bg-white/90 backdrop-blur-xl border border-slate-100 shadow-xl shadow-teal-500/5 rounded-[2.5rem] transition-colors duration-300">
             <div className="flex items-center gap-12">
@@ -16,19 +21,34 @@ export const Navbar = () => {
                 <div className="hidden lg:flex items-center gap-8">
                     <NavLink href="/" label="Home" />
                     <NavLink href="/plans" label="Insurance Plans" />
-                    <NavLink href="#" label="How it Works" />
+                    <NavLink href="/how-it-works" label="How it Works" />
                     <NavLink href="#" label="Privacy" />
                 </div>
             </div>
 
             <div className="flex items-center gap-4">
-                <Link href="/plans">
-                    <button
-                        className="bg-slate-900 text-white px-8 py-2.5 rounded-full font-bold text-xs shadow-lg hover:bg-slate-800 transition-all uppercase tracking-widest"
-                    >
-                        View All Plans
-                    </button>
-                </Link>
+                {user ? (
+                    <div className="flex items-center gap-4">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Profile</span>
+                            <span className="text-xs font-bold text-slate-900">{user.email}</span>
+                        </div>
+                        <button
+                            onClick={logout}
+                            className="bg-slate-100 text-slate-600 px-6 py-2.5 rounded-full font-bold text-xs hover:bg-slate-200 transition-all uppercase tracking-widest"
+                        >
+                            Log Out
+                        </button>
+                    </div>
+                ) : (
+                    <Link href="/auth">
+                        <button
+                            className="bg-slate-900 text-white px-8 py-2.5 rounded-full font-bold text-xs shadow-lg hover:bg-slate-800 transition-all uppercase tracking-widest"
+                        >
+                            Sign In
+                        </button>
+                    </Link>
+                )}
             </div>
         </nav>
     );
