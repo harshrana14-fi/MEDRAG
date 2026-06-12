@@ -4,7 +4,7 @@ services:
     root: medrag-backend
     runtime: python
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
-    startCommand: python main.py
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PIP_EXTRA_INDEX_URL
         value: https://download.pytorch.org/whl/cpu
