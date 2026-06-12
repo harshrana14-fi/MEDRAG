@@ -24,8 +24,10 @@ class Config:
     ALGORITHM = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 1 week
     
-    CHROMA_PERSIST_DIR = os.getenv("CHROMA_PERSIST_DIR", "./chroma_data")
-    CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", "health_documents")
+    # Pinecone Vector Database (Replaces ChromaDB for cloud persistence)
+    PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
+    PINECONE_INDEX_NAME = os.getenv("PINECONE_INDEX_NAME", "medrag-health-documents")
+    PINECONE_ENVIRONMENT = os.getenv("PINECONE_ENVIRONMENT", "us-east-1-aws")
     
     FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
     MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", 50))
