@@ -1,6 +1,7 @@
 services:
   - type: web
     name: medrag-backend
+    root: medrag-backend
     runtime: python
     buildCommand: pip install --upgrade pip && pip install -r requirements.txt
     startCommand: python main.py
